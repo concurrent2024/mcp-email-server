@@ -24,6 +24,7 @@ dev = [
     "anyio>=4.6",
     "aiosmtpd>=1.4.6",
     "ruff>=0.8",
+    "pytest-cov>=5.0",
 ]
 
 [project.scripts]
@@ -36,6 +37,15 @@ packages = ["src/mcp_email"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 filterwarnings = ["ignore::DeprecationWarning"]
+addopts = "--cov=mcp_email --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+branch = true
+source = ["mcp_email"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
 
 [tool.ruff]
 line-length = 100
