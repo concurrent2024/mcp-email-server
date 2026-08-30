@@ -157,6 +157,20 @@ class _StubMailBox:
         self.client = _StubImapClient(capabilities)
 
 
+def test_uids_omits_charset_so_netease_accepts_all_search(settings, mailbox, monkeypatch):
+    seen: list[object] = []
+    original = mailbox.uids
+
+    def wrapped(criteria="ALL", charset=None, sort=None):
+        seen.append(charset)
+        return original(criteria, charset=charset, sort=sort)
+
+    monkeypatch.setattr(mailbox, "uids", wrapped)
+    mailbox.add(1, make_raw())
+    assert imap_client.probe(settings).endswith("1 message(s)")
+    assert seen == [None]
+
+
 def test_client_identifies_itself_when_the_server_supports_id():
     """Netease servers refuse every command after login until this is sent."""
     box = _StubMailBox(("IMAP4REV1", "ID"))

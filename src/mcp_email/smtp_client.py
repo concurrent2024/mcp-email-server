@@ -111,11 +111,18 @@ def build_message(
     return message
 
 
+def _ssl_context() -> ssl.SSLContext:
+    """Prefer certifi's CA bundle; macOS Python often has an empty default store."""
+    import certifi
+
+    return ssl.create_default_context(cafile=certifi.where())
+
+
 def _connect(settings: Settings) -> smtplib.SMTP:
     """Open a secured SMTP session, without logging in."""
     timeout = settings.network_timeout
     if settings.smtp_security == "ssl":
-        context = ssl.create_default_context()
+        context = _ssl_context()
         return smtplib.SMTP_SSL(
             settings.smtp_host, settings.smtp_port, timeout=timeout, context=context
         )
@@ -124,7 +131,7 @@ def _connect(settings: Settings) -> smtplib.SMTP:
     try:
         smtp.ehlo()
         if settings.smtp_security == "starttls":
-            smtp.starttls(context=ssl.create_default_context())
+            smtp.starttls(context=_ssl_context())
             smtp.ehlo()
     except Exception:
         smtp.close()

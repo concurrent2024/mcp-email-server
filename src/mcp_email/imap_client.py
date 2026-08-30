@@ -404,8 +404,19 @@ def set_flags(
     return done
 
 
+def _uids(mailbox: BaseMailBox, criteria: str = "ALL") -> list[str]:
+    """UID SEARCH without an explicit CHARSET.
+
+    Netease (163 / qiye.163.com) answers BAD "Could not parse command" for
+    ``UID SEARCH CHARSET US-ASCII ALL``, which is imap-tools' default. ASCII
+    criteria work without CHARSET; searches that need non-ASCII already pass
+    ``charset="UTF-8"`` through ``fetch``.
+    """
+    return mailbox.uids(criteria, charset=None)
+
+
 def _assert_exists(mailbox: BaseMailBox, uid: str) -> None:
-    if not mailbox.uids(f"UID {uid}"):
+    if not _uids(mailbox, f"UID {uid}"):
         raise MessageNotFoundError(f"No message with UID {uid} in this folder.")
 
 
@@ -492,7 +503,7 @@ def latest_uid(
 ) -> int:
     """Highest UID currently in the folder, or 0 when it is empty."""
     with open_mailbox(settings, folder, auth=auth) as mailbox:
-        uids = mailbox.uids("ALL")
+        uids = _uids(mailbox)
         return max((int(u) for u in uids if u.isdigit()), default=0)
 
 
@@ -524,7 +535,7 @@ def fetch_above_uid(
 def probe(settings: Settings, *, auth: AuthProvider | None = None) -> str:
     """Connect, authenticate, and report the mailbox size without touching anything."""
     with open_mailbox(settings, auth=auth) as mailbox:
-        count = len(mailbox.uids("ALL"))
+        count = len(_uids(mailbox))
         return (
             f"Authenticated with {settings.imap_host}:{settings.imap_port} "
             f"as {settings.imap_username}; INBOX holds {count} message(s)"
