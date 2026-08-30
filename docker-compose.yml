@@ -1,0 +1,30 @@
+services:
+  mcp-email:
+    build: .
+    image: mcp-email-server:local
+    restart: unless-stopped
+    ports:
+      # Bind to loopback only. Put a reverse proxy with TLS + auth in front
+      # before exposing this beyond the host. The process has no built-in auth.
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    environment:
+      EMAIL_ATTACHMENT_DIR: /data/attachments
+    volumes:
+      - email-attachments:/data/attachments
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1', 8000), 3); s.close()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  email-attachments:
