@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from email.message import EmailMessage
@@ -97,6 +98,9 @@ class FakeMailBox:
     def _current(self) -> list[MailMessage]:
         return self.messages.setdefault(self.selected, [])
 
+    def _has_flag(self, message: MailMessage, flag: str) -> bool:
+        return flag.lower() in {f.lower() for f in message.flags}
+
     def _matching(self, criteria: str) -> list[MailMessage]:
         criteria = str(criteria).strip()
         messages = self._current()
@@ -106,7 +110,24 @@ class FakeMailBox:
                 low = int(spec[:-2])
                 return [m for m in messages if int(m.uid or 0) >= low]
             return [m for m in messages if m.uid == spec]
-        return list(messages)
+        if criteria in ("", "ALL"):
+            return list(messages)
+
+        found = list(messages)
+        upper = criteria.upper()
+        if "UNSEEN" in upper:
+            found = [m for m in found if not self._has_flag(m, "\\Seen")]
+        if "FLAGGED" in upper and "UNFLAGGED" not in upper:
+            found = [m for m in found if self._has_flag(m, "\\Flagged")]
+        from_match = re.search(r'FROM\s+"([^"]+)"', criteria, re.IGNORECASE)
+        if from_match:
+            needle = from_match.group(1).lower()
+            found = [m for m in found if needle in (m.from_ or "").lower()]
+        subject_match = re.search(r'SUBJECT\s+"([^"]+)"', criteria, re.IGNORECASE)
+        if subject_match:
+            needle = subject_match.group(1).lower()
+            found = [m for m in found if needle in (m.subject or "").lower()]
+        return found
 
     # -- imap-tools API ---------------------------------------------------
 
@@ -130,6 +151,9 @@ class FakeMailBox:
         found.sort(key=lambda m: int(m.uid or 0), reverse=reverse)
         if isinstance(limit, int):
             found = found[:limit]
+        if mark_seen:
+            for message in found:
+                self.flag_calls.append((str(message.uid or ""), "\\Seen", True))
         return iter(found)
 
     def uids(self, criteria: str = "ALL", charset=None, sort=None) -> list[str]:
