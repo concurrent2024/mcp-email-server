@@ -207,7 +207,7 @@ def test_connect_uses_smtp_ssl(monkeypatch, settings_factory):
 
     class FakeSSL:
         def __init__(self, host, port, timeout=None, context=None):
-            created.update(host=host, port=port, timeout=timeout)
+            created.update(host=host, port=port, timeout=timeout, context=context)
             self._host = host
 
     monkeypatch.setattr(smtp_client.smtplib, "SMTP_SSL", FakeSSL)
@@ -215,6 +215,7 @@ def test_connect_uses_smtp_ssl(monkeypatch, settings_factory):
     conn = smtp_client._connect(settings)
     assert created["host"] == "smtp.test"
     assert created["port"] == 465
+    assert created["context"] is not None
     assert isinstance(conn, FakeSSL)
 
 
