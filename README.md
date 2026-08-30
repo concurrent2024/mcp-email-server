@@ -83,8 +83,8 @@ EMAIL_ALLOW_SEND=true
 
 几个务必注意的点：
 
-- **绝大多数服务商不接受登录密码**。Gmail、QQ、163 都要求单独生成一串“授权码”或“应用专用密码”，填错了会得到一条含糊的登录失败信息。
-- **Microsoft 已停用个人 Outlook.com 与多数 M365 租户的基本认证（basic auth）**。也就是说密码方式在那里多半已经行不通，需要 OAuth2 —— 本项目当前尚未实现完整的 OAuth2 授权流程（见下文“扩展 OAuth2”）。
+- **绝大多数服务商不接受登录密码**。Gmail、QQ、163 都要求单独生成一串"授权码"或"应用专用密码"，填错了会得到一条含糊的登录失败信息。
+- **Microsoft 已停用个人 Outlook.com 与多数 M365 租户的基本认证（basic auth）**。也就是说密码方式在那里多半已经行不通，需要 OAuth2 —— 本项目当前尚未实现完整的 OAuth2 授权流程（见下文"扩展 OAuth2"）。
 - **163/126 需要 IMAP `ID` 命令**，否则登录后每条命令都会被拒绝并返回 `Unsafe Login`。本服务器会在服务端声明支持时自动发送该命令，你不需要做任何事。
 - `SMTP_USERNAME` / `SMTP_PASSWORD` 留空时自动复用 `IMAP_*` 的值，同一个账号不必填两遍。
 
@@ -99,7 +99,7 @@ EMAIL_ALLOW_SEND=true
 | `EMAIL_RECIPIENT_ALLOWLIST` | 空（放行所有人） | 收件人白名单，可写完整地址或域名 |
 | `EMAIL_ATTACHMENT_DIR` | `./attachments` | 附件读写只允许发生在此目录内 |
 | `EMAIL_MAX_BODY_CHARS` | `20000` | 单封正文返回上限，避免撑爆模型上下文 |
-| `EMAIL_SAVE_SENT_COPY` | `false` | 发信后往“已发送”追加一份副本 |
+| `EMAIL_SAVE_SENT_COPY` | `false` | 发信后往"已发送"追加一份副本 |
 
 刚接入时**强烈建议先把白名单设成你自己的地址**，确认整条链路行为符合预期后再放开：
 
@@ -150,11 +150,11 @@ mcp-email-server --transport streamable-http --host 127.0.0.1 --port 8000
 
 配好之后直接用自然语言指挥即可：
 
-- “看看我收件箱里有没有来自财务的未读邮件” → `search_emails`
-- “把第二封的完整内容念给我听” → `read_email`
-- “帮我回复她，说方案我同意，周五之前给她初稿” → `draft_reply` / `send_email`（带 `reply_to_uid`，回复会正确挂在原会话线程上）
-- “等一下验证码邮件，收到告诉我” → `wait_for_new_emails`
-- “把那封带发票的附件下载下来” → `download_attachment`
+- "看看我收件箱里有没有来自财务的未读邮件" → `search_emails`
+- "把第二封的完整内容念给我听" → `read_email`
+- "帮我回复她，说方案我同意，周五之前给她初稿" → `draft_reply` / `send_email`（带 `reply_to_uid`，回复会正确挂在原会话线程上）
+- "等一下验证码邮件，收到告诉我" → `wait_for_new_emails`
+- "把那封带发票的附件下载下来" → `download_attachment`
 
 服务器的 instructions 里明确要求模型在调用 `send_email` 前先把收件人、主题、正文摆给你确认，各工具也带了 `readOnlyHint` / `destructiveHint` 标注，支持的客户端会据此决定是否弹出确认框。但这些是提示而非强制——真正的兜底是上面那几个开关和白名单。
 
@@ -199,7 +199,7 @@ src/mcp_email/
   __main__.py     # CLI 入口
 ```
 
-每次 IMAP 操作都是“连接 → 干活 → 登出”。IMAP 服务器会主动断开空闲连接，而一个 MCP 服务器可能几小时都没人调用，长连接放在那儿多半已经死了。
+每次 IMAP 操作都是"连接 → 干活 → 登出"。IMAP 服务器会主动断开空闲连接，而一个 MCP 服务器可能几小时都没人调用，长连接放在那儿多半已经死了。
 
 ## 扩展 OAuth2
 
